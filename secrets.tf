@@ -4,7 +4,7 @@ resource "kubernetes_secret" "mariadb_secret" {
   }
 
   data = {
-    mariadb-password = base64encode("siskamariadb")
+    mariadb-password = base64encode("agitatanisha")
   }
 
   type = "Opaque"

@@ -25,7 +25,7 @@ resource "kubernetes_deployment" "mariadb" {
       spec {
         container {
           name  = "mariadb"
-          image = "mariadb:latest"
+          image = "mariadb:10.11" # Gunakan versi stabil
 
           port {
             container_port = 3306
@@ -41,11 +41,6 @@ resource "kubernetes_deployment" "mariadb" {
             }
           }
 
-          env {
-            name  = "MARIADB_DATABASE"
-            value = "mydatabase"
-          }
-
           volume_mount {
             name       = "mariadb-storage"
             mount_path = "/var/lib/mysql"
@@ -54,7 +49,6 @@ resource "kubernetes_deployment" "mariadb" {
 
         volume {
           name = "mariadb-storage"
-
           persistent_volume_claim {
             claim_name = "mariadb-pvc"
           }
@@ -63,42 +57,3 @@ resource "kubernetes_deployment" "mariadb" {
     }
   }
 }
-
-# PVC
-resource "kubernetes_persistent_volume_claim" "mariadb_pvc" {
-  metadata {
-    name = "mariadb-pvc"
-  }
-
-  spec {
-    access_modes = ["ReadWriteOnce"]
-
-    resources {
-      requests = {
-        storage = "5Gi"
-      }
-    }
-  }
-}
-
-# SERVICE NodePort
-resource "kubernetes_service" "mariadb" {
-  metadata {
-    name = "mariadb-service"
-  }
-
-  spec {
-    selector = {
-      app = "mariadb"
-    }
-
-    port {
-      port        = 3306
-      target_port = 3306
-      node_port   = 30036
-    }
-
-    type = "NodePort"
-  }
-}
-
