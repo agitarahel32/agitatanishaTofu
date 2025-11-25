@@ -1,6 +1,7 @@
 resource "kubernetes_deployment" "mariadb" {
   metadata {
-    name = "mariadb"
+    name      = "mariadb"
+    namespace = kubernetes_namespace.mariadb_ns.metadata[0].name
     labels = {
       app = "mariadb"
     }
@@ -23,22 +24,19 @@ resource "kubernetes_deployment" "mariadb" {
       }
 
       spec {
+        service_account_name = kubernetes_service_account.mariadb_sa.metadata[0].name
+
         container {
           name  = "mariadb"
-          image = "mariadb:10.11" # Gunakan versi stabil
+          image = "mariadb:latest"
+
+          env {
+            name  = "MYSQL_ROOT_PASSWORD"
+            value = "rootpassword"
+          }
 
           port {
             container_port = 3306
-          }
-
-          env {
-            name = "MARIADB_ROOT_PASSWORD"
-            value_from {
-              secret_key_ref {
-                name = "mariadb-secret"
-                key  = "mariadb-password"
-              }
-            }
           }
 
           volume_mount {
@@ -50,10 +48,30 @@ resource "kubernetes_deployment" "mariadb" {
         volume {
           name = "mariadb-storage"
           persistent_volume_claim {
-            claim_name = "mariadb-pvc"
+            claim_name = kubernetes_persistent_volume_claim.mariadb_pvc.metadata[0].name
           }
         }
       }
     }
+  }
+}
+
+resource "kubernetes_service" "mariadb_service" {
+  metadata {
+    name      = "mariadb-service"
+    namespace = kubernetes_namespace.mariadb_ns.metadata[0].name
+  }
+
+  spec {
+    selector = {
+      app = "mariadb"
+    }
+
+    port {
+      port        = 3306
+      target_port = 3306
+    }
+
+    type = "ClusterIP"
   }
 }
